@@ -1,0 +1,53 @@
+# Problem:
+# You have a list of email addresses, and you need to extract only the valid ones. The valid email format should follow these rules:
+
+# The email should start with an alphanumeric string (it may include underscores or periods but cannot start with them).
+# It must contain exactly one "@" symbol.
+# The domain name should contain only letters and may include a period (e.g., gmail.com, domain.co.uk).
+# The domain name cannot contain two "." consecutively.
+# The domain name cannot start with ".".
+# The domain name can have more than one word.
+# The top-level domain (TLD) should be between 2 and 4 characters long.
+
+# Task:
+# Write a regex pattern in R to filter and extract only the valid email addresses from the emails vector.
+
+emails <- c("john.doe@gmail.com", "jane_doe@domain.co.uk", 
+            "bad.email@domain..com", "_invalid@domain.com",
+            "missingatdomain.com", "user@domain", "valid.user123@valid.com")
+
+# test valid or invalid
+install.packages("stringr")
+library(stringr)
+
+email_validity <- function(emails) {
+  # check2 - contains only one "@" symbol
+  tally <- c()
+  
+  temp <- stringr::str_extract_all(emails, "[^@]+")
+  ind <- which(sapply(temp, function(x) length(x)) < 2)
+  tally <- c(tally, ind)
+  
+  # check1 - alphanumeric string (may contain underscore or period but cannot start with them)
+  temp <- lapply(temp[-ind], function(x) x[1])
+  ind <- which(sapply(temp, function(x) str_starts(x, "[\\._]")) == TRUE) # starts with "dot"
+  tally <- c(tally, ind)
+  temp <- temp[-ind]
+  ind <- which(sapply(temp, function(x) str_detect(x, "[\\._0-9a-zA-Z]+", negate = TRUE)) == TRUE)
+  tally <- c(tally, ind)
+  
+  # check 3 - only letters and period in domain name
+  temp <- stringr::str_extract_all(emails, "[^@]+")
+  temp <- lapply(temp[-tally], function(x) x[2])
+  ind <- which(sapply(temp, function(x) str_starts(x, "[\\._]")) == TRUE) # starts with "dot"
+  tally <- c(tally, ind)
+  temp <- temp[-ind]
+  ind <- which(sapply(temp, function(x) str_detect(x, "[\\.a-zA-Z]+", negate = TRUE)) == TRUE) # one or more "dots" and alphabets
+  tally <- c(tally, ind)
+  ind <- which(sapply(temp, function(x) str_detect(x, "[^.*]\\.\\.")) == TRUE) # two succesive "dots"
+  tally <- c(tally, ind)
+  
+  temp <- stringr::str_extract_all(temp, "[^.]+")
+  
+  paste0("the following emails are invalid: ", emails[tally], collapse=",")
+}
